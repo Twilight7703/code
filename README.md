@@ -7,33 +7,30 @@
 ```text
 患者TXT/JSON附加信息
     ↓ UTF-8/原始字节序列P
-固定差分-LZW10编码
-    ↓ 一维差分 + 符号位置图 + LZW10
+差分-LZW编码
+    ↓ 一维差分 + 符号位置图 + LZW
 实际嵌入码流
     ↓
 XORP + 哈夫曼写入医学载体图像的高位空闲空间
     ↓
-单通道旋转置乱
-    ↓
-Fibonacci Q^9矩阵扩散
+单通道旋转置
     ↓
 DNA编码 + 中心扩散（二维Salomon映射提供混沌矩阵）
     ↓
 密文医学图像
 ```
 
-这里的差分方法是论文 3 二维医学图像差分思想向一维附加信息字节流的适配。发送端固定执行一维差分、符号位图生成和LZW10编码，不再选择raw或直接LZW10。解码器同时兼容历史LZW12结果。
+这里的差分方法是二维医学图像差分思想向一维附加信息字节流的适配。发送端固定执行一维差分、符号位图生成。解码器同时兼容
 
 ## 主要文件
 
-- `additional_info_diff_lzw_compress.m`：患者附加信息固定差分-LZW10编码。
+- `additional_info_diff_lzw_compress.m`：患者附加信息差分-LZW编码。
 - `additional_info_diff_lzw_decompress.m`：患者信息无损重建。
-- `xorp_huffman_embed.m`：论文 2 的 2×2 XORP 与哈夫曼标签链嵌入。
-- `rotation_scramble.m`：论文 1 的单通道顺时针环遍历置乱。
-- `fibonacci_q_diffuse.m`：论文 5 的 Fibonacci Q^9 矩阵扩散。
-- `dna_center_diffuse.m`：论文 5 的 DNA 累加、互补和中心扩散。
-- `salomon_sequence.m`：在论文6二维Salomon映射上加入指数增益内正弦交叉反馈。
-- `salomon_material.m`：v4数据包从一条改进二维Salomon轨道生成四路DNA掩码：
+- `xorp_huffman_embed.m`： 2×2 XORP 与哈夫曼标签链嵌入。
+- `rotation_scramble.m`：单通道顺时针环遍历置乱。
+- `dna_center_diffuse.m`：DNA 累加、互补和中心扩散。
+- `salomon_sequence.m`：二维Salomon映射上加入指数增益内正弦交叉反馈。
+- `salomon_material.m`：v4数据包从一条二维Salomon轨道生成四路DNA掩码：
   `X1=x(1:2:end)`、`X2=x(2:2:end)`、`X3=y(1:2:end)`、`X4=y(2:2:end)`；
   新参数`c、d`由SHA-512派生到`[0.5,1.5)`；直接替换后不再兼容旧v2/v3密文。
 - `telemedicine_send.m`：不含验证逻辑的底层发送算法。
@@ -132,7 +129,7 @@ verification_write_json('output/verification/receiver_request.json',request);
 - `payloadBits`：选中码流连同嵌入头部和B2恢复位实际占用的位数。
 - `OriginalPatientBytes`：原始患者信息字节数。
 - `CompressedPatientBytes`：实际交给XORP-Huffman嵌入的选中码流字节数。
-- `EncodingMode`：当前实现固定为`diff-lzw10`；解码器仍兼容历史`diff-lzw12`结果。
+- `EncodingMode`：当前实现为`diff-lzw10`；解码器仍兼容历史`diff-lzw12`结果。
 - 原始信息有效嵌入率可计算为：
 
 ```matlab
